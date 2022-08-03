@@ -46,80 +46,17 @@ function exportBar() {
             format: format,
             pips: { mode: 'steps', format: format },
         }).on('slide', function(e) { //when slide will change
-            console.log(e)
+            console.log(e[0])
 
-            if(e == 2010){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
+            for(var i = 0; i < exportData.length; i++){
+                if(exportData[i].year==e[0])
+                {
+                    listOfExport.push(exportData[i])
                 }
             }
-            else if(e == 2011){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2012){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2013){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2014){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2015){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2016){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2017){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
-            else if(e == 2018){ // if slider = year
-                for(var i = 0; i < exportData.length; i++){
-                    if(e==exportData[i].year)
-                    {
-                        listOfExport.push(exportData[i])
-                    }
-                }
-            }
+
+            console.log(listOfExport);
+            console.log(exportData);
 
             //Bars
             svg.selectAll("exportBar")
@@ -152,6 +89,7 @@ function exportBar() {
         valuesSlider.noUiSlider.set(['2010', '2018']);
 
 
+
         // somehow need pass year here
         // calcuate
         var metrics = d3.nest()
@@ -162,10 +100,7 @@ function exportBar() {
                     total: d3.sum(v, function (d) { return d.value; })
                 };
             })
-            .entries(exportData);
-        
-        console.log(listOfExport);
-        console.log(exportData);
+            .entries(listOfExport);
         // console.log(metrics);
 
         // get the top 10
@@ -176,7 +111,7 @@ function exportBar() {
             return data.slice(0, 10);
         }
 
-        console.log(topTen(metrics))
+        // console.log(topTen(metrics))
 
         // Define the div for the tooltip
         var div = d3.select("body").append("div")
