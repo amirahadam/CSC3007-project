@@ -17,9 +17,21 @@ function commBar() {
     // Parse the Data
     d3.csv("export.csv", function (data) {
 
-        console.log(data)
+        //console.log(data)
 
-        var metrics = d3.nest()
+        /*var metrics = d3.nest()
+            .key(function (d) { return d.Commodity; })
+            .rollup(function (v) {
+                return {
+                    count: v.length,
+                    total: d3.sum(v, function (d) { return d.value; })
+                };
+            })
+            .entries(data);*/
+        //console.log(metrics);
+
+        var year = d3.nest()
+            .key(function (d) { return d.year; })
             .key(function (d) { return d.Commodity; })
             .rollup(function (v) {
                 return {
@@ -28,7 +40,7 @@ function commBar() {
                 };
             })
             .entries(data);
-        console.log(metrics);
+            dataYear = year[0]
 
         function topTen(data) {  //sorting to top 10 function
             data.sort(function (a, b) {
@@ -37,8 +49,8 @@ function commBar() {
             return data.slice(0, 10);
         }
 
-        console.log(topTen(metrics))
-
+        //console.log(topTen(metrics))
+            
         // Define the div for the tooltip
         var div = d3.select("body").append("div")
             .attr("class", "tooltip")
@@ -47,7 +59,7 @@ function commBar() {
 
         // Add X axis
         var x_export = d3.scaleLinear()
-            .domain([0, 500000])
+            .domain([0, 100000])
             .range([0, width]);
         svg.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -59,14 +71,13 @@ function commBar() {
         // Y axis
         var y_export = d3.scaleBand()
             .range([0, height])
-            .domain(topTen(metrics).map(function (d) { return d.key; }))
+            .domain(topTen(dataYear.values).map(function (d) { return d.key; }))
             .padding(.1);
         svg.append("g")
             .call(d3.axisLeft(y_export))
-
-        //Bars
-        svg.selectAll("commBar")
-            .data(topTen(metrics))
+            
+            svg.selectAll("commBar")
+            .data(topTen(dataYear.values))
             .enter()
             .append("rect")
             .attr("x", x_export(0))
@@ -88,6 +99,88 @@ function commBar() {
                     .duration(500)
                     .style("opacity", 0);
             });
+
+        var sliderYear = 2010;
+
+        var valuesSlider = document.getElementById('slider');
+        var valuesForSlider = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018];
+
+        var format = {
+            to: function (value) {
+                return valuesForSlider[Math.round(value)];
+            },
+            from: function (value) {
+                return valuesForSlider.indexOf(Number(value));
+            }
+        };
+
+        noUiSlider.create(valuesSlider, {
+            start: [2010],
+            range: { min: 0, max: valuesForSlider.length - 1 },
+            step: 1,
+            tooltips: true,
+            format: format,
+            pips: { mode: 'steps', format: format },
+        }).on('slide', function (e) {
+            sliderYear = e[0]
+            
+            if (sliderYear == 2018){
+                dataYear = year[0]
+                console.log(dataYear)
+            } else if (sliderYear == 2017){
+                dataYear = year[1]
+                console.log(dataYear)
+            }else if (sliderYear == 2016){
+                dataYear = year[2]
+                console.log(dataYear)
+            }else if (sliderYear == 2015){
+                dataYear = year[3]
+                console.log(dataYear)
+            }else if (sliderYear == 2014){
+                dataYear = year[4]
+                console.log(dataYear)
+            }else if (sliderYear == 2013){
+                dataYear = year[5]
+                console.log(dataYear)
+            }else if (sliderYear == 2012){
+                dataYear = year[6]
+                console.log(dataYear)
+            }else if (sliderYear == 2011){
+                dataYear = year[7]
+                console.log(dataYear)
+            }else if (sliderYear == 2010){
+                dataYear = year[8]
+                console.log(dataYear)
+            }
+
+            //console.log(topTen(dataYear.values))
+
+            svg.selectAll("commBar")
+            .data(topTen(dataYear.values))
+            .enter()
+            .append("rect")
+            .attr("x", x_export(0))
+            .attr("y", function (d) { return y_export(d.key); })
+            .attr("width", function (d) { return x_export(d.value.total); })
+            .attr("height", y_export.bandwidth())
+            .attr("fill", "#69b3a2")
+
+            .on("mouseover", function (d) {
+                div.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                div.html(d.key + "<br/> <br/> Total value : <b>" + d.value.total + "</b>")
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function (d) {
+                div.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+        });
+
+        valuesSlider.noUiSlider.set(['2010', '2018']);
     })
 
 }
@@ -113,7 +206,7 @@ function countryBar() {
     // Parse the Data
     d3.csv("export.csv", function (data) {
 
-        console.log(data)
+        //console.log(data)
 
         var metrics = d3.nest()
             .key(function (d) { return d.country; })
@@ -124,7 +217,7 @@ function countryBar() {
                 };
             })
             .entries(data);
-        console.log(metrics);
+        //console.log(metrics);
 
         function topTen(data) {  //sorting to top 10 function
             data.sort(function (a, b) {
@@ -133,7 +226,7 @@ function countryBar() {
             return data.slice(0, 10);
         }
 
-        console.log(topTen(metrics))
+        //console.log(topTen(metrics))
 
         // Define the div for the tooltip
         var div = d3.select("body").append("div")
@@ -166,8 +259,8 @@ function countryBar() {
             .data(topTen(metrics))
             .enter()
             .append("rect")
-            .attr("x", function (d) { return x(d.key);})
-            .attr("y", function (d) { return y(d.value.total);})
+            .attr("x", function (d) { return x(d.key); })
+            .attr("y", function (d) { return y(d.value.total); })
             .attr("width", x.bandwidth())
             .attr("height", function (d) { return height - y(d.value.total); })
             .attr("fill", "lightblue")
