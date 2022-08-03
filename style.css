@@ -7,7 +7,7 @@
     width: 70%;
     margin: 0 auto;
 }
-  .exportChart {
+  .commChart {
       position: absolute;
       top: 70px;
       left: 30px;
@@ -15,7 +15,7 @@
       height: 450px;
   }
 
-  .importChart {
+  .countryChart {
       position: absolute;
       top: 70px;
       left: 900px;

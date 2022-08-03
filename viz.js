@@ -1,11 +1,12 @@
-function exportBar() {
+// TOP 10 COMMODITIES FOR IMPORT BARGRAPH
+function commBar() {
     // set the dimensions and margins of the graph
     var margin = { top: 20, right: 30, bottom: 40, left: 150 },
         width = 800 - margin.left - margin.right,
         height = 350 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
-    var svg = d3.select("#exportChart")
+    var svg = d3.select("#commChart")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -64,7 +65,7 @@ function exportBar() {
             .call(d3.axisLeft(y_export))
 
         //Bars
-        svg.selectAll("exportBar")
+        svg.selectAll("commBar")
             .data(topTen(metrics))
             .enter()
             .append("rect")
@@ -91,17 +92,17 @@ function exportBar() {
 
 }
 
-exportBar();
+commBar();
 
-// TOP 10 COMMODITIES FOR IMPORT BARGRAPH
-function importBar() {
+// TOP 10 COUNTRIES FOR EXPORT BARGRAPH
+function countryBar() {
     // set the dimensions and margins of the graph
-    var margin = { top: 20, right: 30, bottom: 40, left: 150 },
+    var margin = { top: 20, right: 30, bottom: 40, left: 70 },
         width = 800 - margin.left - margin.right,
         height = 350 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
-    var svg = d3.select("#importChart")
+    var svg = d3.select("#countryChart")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -110,12 +111,12 @@ function importBar() {
             "translate(" + margin.left + "," + margin.top + ")");
 
     // Parse the Data
-    d3.csv("import.csv", function (data) {
+    d3.csv("export.csv", function (data) {
 
         console.log(data)
 
         var metrics = d3.nest()
-            .key(function (d) { return d.Commodity; })
+            .key(function (d) { return d.country; })
             .rollup(function (v) {
                 return {
                     count: v.length,
@@ -141,33 +142,34 @@ function importBar() {
 
 
         // Add X axis
-        var x_import = d3.scaleLinear()
-            .domain([0, 1400000])
-            .range([0, width]);
+        var x = d3.scaleBand()
+            .range([0, width])
+            .domain(topTen(metrics).map(function (d) { return d.key; }))
+            .padding(0.2);
         svg.append("g")
             .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x_import))
+            .call(d3.axisBottom(x))
             .selectAll("text")
             .attr("transform", "translate(-10,0)rotate(-45)")
-            .style("text-anchor", "end");
+            .style("text-anchor", "end")
+            .style("Arial", "9px times");
 
         // Y axis
-        var y_import = d3.scaleBand()
-            .range([0, height])
-            .domain(topTen(metrics).map(function (d) { return d.key; }))
-            .padding(.1);
+        var y = d3.scaleLinear()
+            .domain([0, 500000])
+            .range([height, 0]);
         svg.append("g")
-            .call(d3.axisLeft(y_import))
+            .call(d3.axisLeft(y));
 
         //Bars
-        svg.selectAll("importBar")
+        svg.selectAll("countryBar")
             .data(topTen(metrics))
             .enter()
             .append("rect")
-            .attr("x", x_import(0))
-            .attr("y", function (d) { return y_import(d.key); })
-            .attr("width", function (d) { return x_import(d.value.total); })
-            .attr("height", y_import.bandwidth())
+            .attr("x", function (d) { return x(d.key);})
+            .attr("y", function (d) { return y(d.value.total);})
+            .attr("width", x.bandwidth())
+            .attr("height", function (d) { return height - y(d.value.total); })
             .attr("fill", "lightblue")
 
             .on("mouseover", function (d) {
@@ -187,7 +189,7 @@ function importBar() {
 
 }
 
-importBar();
+countryBar();
 
 // Yearly Volume - Line Graph
 function lineGraph() {
