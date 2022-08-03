@@ -5,27 +5,31 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v4.min.js"></script>
-<!-- Add 2 buttons -->
+
+<link href="nouislider.css" rel="stylesheet">
+<script src="nouislider.js"></script>
 
 <!-- Create a div where the graph will take place -->
 
 <div id="main" class="box mainBox">
-  <label for="year">Year : </label>
-        <input type="range" min=2010 max=2018 step=1 id="year" value=2018 oninput="selected_year.value = year.value">
-        <output name="selected_year" id="selected_year">2018</output>
-  <div class="box exportChart" id="exportChart">
-    <h1 class="text-center hd" id="header">
-      Top 10 Commodities - Export
-    </h1>
-  </div>
+  
+    <!-- <div id="slider" class="leaflet-container"></div> -->
+    
+    <div class="box exportChart" id="exportChart">
+        <div id="slider" class="leaflet-container"></div>
+        <h1 class="text-center hd" id="header">
+        Top 10 Commodities - Export
+        </h1>
+    </div>
+
   <div class="box importChart" id="importChart">
     <h1 class="text-center hd" id="header">
-      Top 10 Commodities - Import
+      Top 10 Countries - Export
     </h1>
   </div>
   <div class="box lineGraph" id="lineGraph">
     <h1 class="text-center hd" id="header">
-      Yearly Volume
+      ???
     </h1>
   </div>
   <div class="box choropleth" id="choropleth">
