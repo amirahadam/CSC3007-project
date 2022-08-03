@@ -1,0 +1,53 @@
+  .hd {
+      padding-top: 1%;
+      padding-bottom: 1%;
+      font: 25px sans-serif;
+  }
+  .mainBox{
+    width: 70%;
+    margin: 0 auto;
+}
+  .exportChart {
+      position: absolute;
+      top: 70px;
+      left: 30px;
+      width: 850px;
+      height: 450px;
+  }
+
+  .importChart {
+      position: absolute;
+      top: 70px;
+      left: 900px;
+      width: 850px;
+      height: 450px;
+  }
+
+  .lineGraph {
+    position: absolute;
+    top: 530px;
+    left: 30px;
+    width: 850px;
+    height: 400px;
+}
+
+.choropleth {
+    position: absolute;
+    top: 530px;
+    left: 900px;
+    width: 850px;
+    height: 400px;
+}
+
+  div.tooltip {
+      position: absolute;
+      text-align: center;
+      width: 400px;
+      height: 90px;
+      font: 12px sans-serif;
+      background: lightsteelblue;
+      border-radius: 8px;
+      border: 2px solid black;
+      padding: 10px 0;
+  }
+
