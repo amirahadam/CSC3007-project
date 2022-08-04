@@ -1,37 +1,488 @@
-
 <!DOCTYPE html>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" type="text/css" href="style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-<!-- Load d3.js -->
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<!-- Add 2 buttons -->
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin="" />
+        <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+            }
+            .leaflet-container {
+                height: 800px;
+                width: 1200px;
+                max-width: 100%;
+                max-height: 100%;
+                
+            }
+	
+           .info {
+                padding: 6px 8px;
+                font: 14px/16px Arial, Helvetica, sans-serif;
+                background: white;
+                background: rgba(255,255,255,0.8);
+                box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                border-radius: 5px;
+            }
+            .info h4 {
+                margin: 0 0 5px;
+                color: #777;
+            }
 
-<!-- Create a div where the graph will take place -->
+            .legend {
+                line-height: 18px;
+                color: #555;
+            }
+            .legend i {
+                width: 18px;
+                height: 18px;
+                float: left;
+                margin-right: 8px;
+                opacity: 0.7;
+            }
 
-<div id="main" class="box mainBox">
-  <label for="year">Year : </label>
-        <input type="range" min=2010 max=2018 step=1 id="year" value=2018 oninput="selected_year.value = year.value">
-        <output name="selected_year" id="selected_year">2018</output>
-  <div class="box exportChart" id="exportChart">
-    <h1 class="text-center hd" id="header">
-      Top 10 Commodities - Export
-    </h1>
-  </div>
-  <div class="box importChart" id="importChart">
-    <h1 class="text-center hd" id="header">
-      Top 10 Commodities - Import
-    </h1>
-  </div>
-  <div class="box lineGraph" id="lineGraph">
-    <h1 class="text-center hd" id="header">
-      Yearly Volume
-    </h1>
-  </div>
-  <div class="box choropleth" id="choropleth">
-    <h1 class="text-center hd" id="header">
-      Countries
-    </h1>
-  </div>
-</div>
-<script type='text/javascript' src='viz.js'></script>
+            #block_container {
+                display: flex;
+                justify-content: center;
+            }
+            #block1, #block2
+            {
+                display:inline;
+            }
+        </style>
+    </head>
+    <body>
+    
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <link href="nouislider.css" rel="stylesheet">
+    <script src="nouislider.js"></script>
+
+    <div id="block_container">
+    <div id="map"></div>
+    </div>
+    <div id="block_container">
+    <div id="slider" class="leaflet-container"></div>
+    </div>
+    <div id="block_container">
+        <h4 id="labelYear">2010</h4>
+    </div>
+    <div id="block_container">
+        <div id="export_barchart" id="block1"></div>
+        <div id="export10_barchart" id="block2"></div>
+    </div>
+    
+    <script>
+
+    // Load external data
+    Promise.all([d3.json("https://raw.githubusercontent.com/situofg-randy/CSC3007-GBA02/main/country.json"), d3.json("https://raw.githubusercontent.com/situofg-randy/CSC3007-GBA02/main/export.json")]).then(data => {
+
+        let locations_json = data[0]
+        let export_json = data[1]
+
+        var sliderYear = 2010;
+
+        // Initial data cleaning
+        // const wordsToExclude = new Set(['OR', 'AND']);
+
+        for(const i in export_json) {
+            export_json[i]["Commodity"] = export_json[i]["Commodity"].replace(/\W/g, ' ').split(' ').slice(0,3).join(' ')
+        }
+
+        let result = Object.values(export_json.reduce(function (r, { country, value, year }) {
+            country = country.toLowerCase() || 'unknown';
+            if (r[country]) {
+                if (r[country]["data"][year]) {
+                    r[country]["data"][year].value += value;
+                    r[country].country = country
+                } else {
+                    r[country]["data"][year] = { value }
+                }
+            } else {
+                r[country] = { country };
+                r[country]["data"] = {}
+                r[country]["data"][year] = { value }
+            }
+            return r;
+        }, Object.create(null)));
+
+    for (const x in locations_json["features"]) {
+        for (const y in result) {
+            if (result[y]["country"] !== undefined) {
+                if (locations_json["features"][x]["properties"]["ADMIN"].toLowerCase().includes(result[y]["country"].toLowerCase()) || result[y]["country"].toLowerCase().includes(locations_json["features"][x]["properties"]["ADMIN"].toLowerCase())) {
+                    if (result[y]["data"] === {}) {
+                        locations_json["features"][x]["properties"]["data"] = {}
+                    } else {
+                        locations_json["features"][x]["properties"]["data"] = result[y]["data"]
+                    }
+                    for(i=2010; i<2019; i++) {
+                        if (locations_json["features"][x]["properties"]["data"][i] == undefined) {
+                            locations_json["features"][x]["properties"]["data"][i] = 0  
+                        }
+                    }
+                    if (locations_json["features"][x]["properties"]["data"]["2018"] == undefined) {
+                        locations_json["features"][x]["properties"]["data"]["2018"] = 0  
+                    }
+                }
+            }
+        }
+    }
+
+                
+        console.log(result);
+        console.log(locations_json)
+
+                
+        var margin = {top: 20, right: 100, bottom: 40, left: 200},
+        width = 460,
+        height = 400 - margin.top - margin.bottom;
+
+    var countryYearlyBarChart = d3.select("#export_barchart")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+            
+    function generateCountryYearlyGraph() {
+        countryYearlyBarChart.selectAll("rect").remove()
+        countryYearlyBarChart.selectAll("g").remove()
+        countryYearlyBarChart.selectAll("text").remove()
+
+        var x1 = d3.scaleLinear()
+            .domain([0, Math.max.apply(Math, selectedCountryData.map(function(o) { return o.value; }))])
+            .range([ 0, width]);
+            countryYearlyBarChart.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x1))
+            .selectAll("text")
+            .attr("transform", "translate(-10,0)rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Y axis
+        var y1 = d3.scaleBand()
+            .range([ 0, height ])
+            .domain(
+                Object.keys(locations_json.features.filter(item => item["properties"]["ADMIN"].indexOf(selectedCountry) !== -1)[0]["properties"]["data"])
+            )
+            .padding(.1);
+        countryYearlyBarChart.append("g") 
+            .call(d3.axisLeft(y1))
+
+        //Bars
+        countryYearlyBarChart.selectAll("myRect")
+            .data(selectedCountryData)
+            .enter()
+            .append("rect")
+            .attr("x", x1(0) )
+            .attr("y", function(d) {
+                return y1(d.year)
+            })
+            .attr("width", function(d) {
+                return x1(d.value)
+            })
+            .attr("height", y1.bandwidth() )
+            .attr("fill", "#69b3a2")
+    }
+    var selectedCountryTop10;  
+    function generateCountryTop10Data(selectedCountry, selectedYear) {
+        console.log(selectedYear)
+        selectedCountryTop10 = export_json.filter(item => item["country"].toLowerCase().indexOf(selectedCountry.toLowerCase()) !== -1)
+        selectedCountryTop10 = selectedCountryTop10.filter(function(e) {return e.year === selectedYear })
+
+        temp = Object.values(
+            selectedCountryTop10.reduce((acc, curr) => {
+                acc[curr.HSCode] = acc[curr.HSCode] || { ...curr };
+
+                if (acc[curr.HSCode].value < curr.value) {
+                acc[curr.HSCode] = { ...curr }
+                }
+
+                return acc;
+        }, {}))
+
+        selectedCountryTop10 = temp
+        .sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
+        .filter(obj => obj.value != null)
+        .filter(obj => obj.value != 0)
+        .slice(0, 10)
+    }
+
+ 
+   console.log(selectedCountryTop10)
+   
+   var countryTop10BarChart = d3.select("#export10_barchart")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+    
+    function generateCountryTop10Graph() {
+        countryTop10BarChart.selectAll("rect").remove()
+        countryTop10BarChart.selectAll("g").remove()
+        countryTop10BarChart.selectAll("text").remove()
+
+        var x1 = d3.scaleLinear()
+            .domain([0, Math.max.apply(Math, selectedCountryTop10.map(function(o) { return o.value; }))])
+            .range([ 0, width]);
+            countryTop10BarChart.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x1))
+            .selectAll("text")
+            .attr("transform", "translate(-10,0)rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Y axis
+        var y1 = d3.scaleBand()
+            .range([ 0, height ])
+            .domain(
+                selectedCountryTop10.map(item => item.Commodity)
+            )
+            .padding(.1);
+            countryTop10BarChart.append("g")
+            .call(d3.axisLeft(y1))
+
+        //Bars
+        countryTop10BarChart.selectAll("myRect")
+            .data(selectedCountryTop10)
+            .enter()
+            .append("rect")
+            .attr("x", x1(0) )
+            .attr("y", function(d) {
+                return y1(d.Commodity)
+            })
+            .attr("width", function(d) {
+                return x1(d.value)
+            })
+            .attr("height", y1.bandwidth() )
+            .attr("fill", "#69b3a2")    
+    }
+    
+
+    var selectedCountryData = []
+    var selectedCountry = "";
+
+    function generateCountryYearlyData(selectedCountry) {
+        var country = locations_json.features.filter(item => item["properties"]["ADMIN"].indexOf(selectedCountry) !== -1)
+        var keys = Object.keys(country[0]["properties"]["data"])
+        selectedCountryData = []
+
+        for (const i in country[0]["properties"]["data"]) {
+            var temp_val = country[0]["properties"]["data"][i]["value"]
+            var temp_country = country[0]["properties"]["ADMIN"]
+            var temp_object = {}
+            temp_object["country"] = temp_country
+            temp_object["value"] = temp_val
+            temp_object["year"] = i
+            selectedCountryData.push(temp_object)
+        }
+
+    }
+    
+        // console.log(locations_json.features.filter(item => item["properties"]["ADMIN"].indexOf("China") !== -1))
+        
+
+	var map = L.map('map').setView([1.3258, 70.7587], 3);
+
+    var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+
+    var info = L.control();
+
+    info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info');
+        this.update();
+        return this._div;
+    };
+    
+    info.update = function (props) {
+        try {
+            this._div.innerHTML = '<h4>India Export Data</h4>' +  (props ?
+            '<b>' + props["ADMIN"] + '</b><br />' + parseInt(props["data"]["2010"]["value"]).toString() + ' million, USD' : 'Hover over a country');
+        } catch {
+            this._div.innerHTML = '<h4>India Export Data</h4>' +  (props ?
+            '<b>' + props["ADMIN"] + '</b><br />' + ' No data' : 'Hover over a country');
+        }
+        
+    };
+
+    info.addTo(map);
+
+    // get color depending on population density value
+    function getColor(d) {
+        return d > 10000 ? '#800026' :
+            d > 5000 ? '#BD0026' :
+            d > 4000  ? '#E31A1C' :
+            d > 3000  ? '#FC4E2A' :
+            d > 2000  ? '#FD8D3C' :
+            d > 1000  ? '#FEB24C' :
+            d > 1   ? '#FED976' : '#EEEEEE';
+    }
+
+    function style(feature) {
+        if (feature.properties.data !== undefined) {
+                if (feature.properties.data[sliderYear] !== undefined) {
+                    return {
+                        weight: 2,
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.7,
+                        fillColor: getColor(feature.properties.data[sliderYear]["value"])
+                    };
+            }
+        } else {
+            return {
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7,
+                fillColor: getColor(0)
+            }
+        }
+    }
+
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 5,
+            color: '#666',
+            dashArray: '',
+            fillOpacity: 0.7
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
+        }
+
+        info.update(layer.feature.properties);
+    }
+
+    var geojson;
+
+    function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+        info.update();
+    }
+
+    function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+    }
+
+    function selectCountry(e) {
+        selectedCountry = e["target"]["feature"]["properties"]["ADMIN"]
+        generateCountryYearlyData(selectedCountry)
+        generateCountryYearlyGraph()
+        generateCountryTop10Data(selectedCountry, sliderYear)
+        generateCountryTop10Graph()
+        console.log(selectedCountryTop10)
+
+    }
+
+    function onEachFeature(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+            click: selectCountry
+        });
+    }
+
+    /* global statesData */
+    geojson = L.geoJson(locations_json, {
+        style: style,
+        onEachFeature: onEachFeature
+    }).addTo(map);
+
+    var valuesSlider = document.getElementById('slider');
+    var valuesForSlider = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018];  
+
+    var format = {
+        to: function(value) {
+            return valuesForSlider[Math.round(value)];
+        },
+        from: function (value) {
+            return valuesForSlider.indexOf(Number(value));
+        }
+    };
+
+    noUiSlider.create(valuesSlider, {
+        start: [2010],
+        range: { min: 0, max: valuesForSlider.length - 1 },
+        step: 1,
+        tooltips: true,
+        format: format,
+        pips: { mode: 'steps', format: format },
+    }).on('slide', function(e) {
+        console.log(e)
+        sliderYear = e[0]
+        map.removeLayer(geojson);
+
+
+        geojson = L.geoJson(locations_json, {
+            style: style,
+            onEachFeature: onEachFeature
+        }).addTo(map);
+
+        info.update = function (props) {
+            try {
+            this._div.innerHTML = '<h4>India Export Data</h4>' +  (props ?
+            '<b>' + props["ADMIN"] + '</b><br />' + parseInt(props["data"][sliderYear]["value"]).toString() + ' m' : 'Hover over a country');
+        } catch {
+            this._div.innerHTML = '<h4>India Export Data</h4>' +  (props ?
+            '<b>' + props["ADMIN"] + '</b><br />' + ' No data' : 'Hover over a country');
+        }
+        };
+        var labelYear = document.getElementById("labelYear")
+        labelYear.innerHTML = sliderYear.toString()
+        generateCountryTop10Data(selectedCountry, sliderYear)
+        generateCountryTop10Graph()
+        console.log(selectedCountryTop10)
+    });
+
+    valuesSlider.noUiSlider.set(['2010', '2018']);
+    
+    
+
+
+    map.attributionControl.addAttribution('Export data &copy; All countries');
+
+
+    var legend = L.control({position: 'bottomright'});
+
+    legend.onAdd = function (map) {
+
+        var div = L.DomUtil.create('div', 'info legend');
+        var grades = [1, 100, 1000, 2000, 3000, 4000, 5000, 10000];
+        var labels = [];
+        var from, to;
+
+        for (var i = 0; i < grades.length; i++) {
+            from = grades[i];
+            to = grades[i + 1];
+
+            labels.push(
+                '<i style="background:' + getColor(from + 1) + '"></i> ' +
+                from + (to ? '&ndash;' + to : '+'));
+        }
+
+        div.innerHTML = labels.join('<br>');
+        return div;
+    };
+
+    legend.addTo(map);
+    });  
+    </script>
+
+
+    </body>
+</html>
